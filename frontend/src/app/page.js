@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import useCart from "../hooks/useCart";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -40,6 +41,19 @@ export default function HomePage() {
     const res = await fetch(createApiUrl(API_ENDPOINTS.CATEGORIES));
     const data = await res.json();
     setCategories(data);
+  };
+
+  // Helper function to get the correct image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return "/placeholder.jpg"; // Fallback image
+
+    // If imageUrl is already a full URL (starts with http:// or https://), use it as is
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    // If it's a relative path, prepend API_BASE_URL
+    return `${API_BASE_URL}${imageUrl}`;
   };
 
   const handleSearch = (e) => {
@@ -171,10 +185,14 @@ export default function HomePage() {
               )}
 
               <Link href={`/item/${item._id}`}>
-                <img
-                  src={`${API_BASE_URL}${item.imageUrl}`}
-                  alt={item.title}
+                <Image
+                  src={getImageUrl(item.imageUrl)}
+                  alt={item.title || "Product image"}
+                  width={400}
+                  height={160}
                   className="w-full h-40 object-cover rounded-lg mb-3"
+                  style={{ objectFit: "cover" }}
+                  unoptimized={true}
                 />
               </Link>
               <div className="flex-1 flex flex-col justify-between">
@@ -191,10 +209,11 @@ export default function HomePage() {
                     {item.description?.slice(0, 60)}...
                   </p>
                   <p className="text-xs text-pink-500 mt-1">
-                    Tags: {item.keywords.join(", ")}
+                    Tags: {item.keywords?.join(", ") || "No tags"}
                   </p>
                   <p className="text-yellow-500 text-sm mt-2">
-                    ⭐ {item.rating.toFixed(1)} ({item.ratedBy} ratings)
+                    ⭐ {item.rating?.toFixed(1) || "0.0"} ({item.ratedBy || 0}{" "}
+                    ratings)
                   </p>
                   {user && (
                     <div className="mt-2 flex gap-1 text-xs text-purple-600">
@@ -239,10 +258,14 @@ export default function HomePage() {
       >
         {selectedItem && (
           <div className="flex items-center gap-4">
-            <img
-              src={`${API_BASE_URL}${selectedItem.imageUrl}`}
-              alt={selectedItem.title}
+            <Image
+              src={getImageUrl(selectedItem.imageUrl)}
+              alt={selectedItem.title || "Product image"}
+              width={64}
+              height={64}
               className="w-16 h-16 object-cover rounded"
+              style={{ objectFit: "cover" }}
+              unoptimized={true}
             />
             <div>
               <h3 className="font-semibold text-purple-800">
@@ -263,7 +286,7 @@ export default function HomePage() {
         title="Success!"
         onConfirm={() => setShowSuccessPopup(false)}
         confirmText="OK"
-        hideButtons={true} // ✅ Hides buttons
+        hideButtons={true}
       >
         <div className="text-center">
           <div className="text-green-500 text-4xl mb-2">✓</div>

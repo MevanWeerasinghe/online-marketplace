@@ -2,6 +2,7 @@
 "use client";
 
 import { useUser, SignInButton } from "@clerk/nextjs";
+import Link from "next/link"; // ✅ Added Next.js Link import
 import AuthButtons from "./AuthButtons";
 
 export default function AuthWrapper({ children }) {
@@ -72,18 +73,25 @@ export default function AuthWrapper({ children }) {
           Online Marketplace
         </h1>
         <div className="flex items-center gap-6">
-          <a href="/" className="text-purple-700 font-medium hover:underline">
+          {/* ✅ Replaced <a> tags with <Link> components */}
+          <Link
+            href="/"
+            className="text-purple-700 font-medium hover:underline"
+          >
             Home
-          </a>
-          <a href="/sell" className="text-pink-600 font-medium hover:underline">
+          </Link>
+          <Link
+            href="/sell"
+            className="text-pink-600 font-medium hover:underline"
+          >
             Sell Item
-          </a>
-          <a
+          </Link>
+          <Link
             href="/cart"
             className="text-green-600 font-medium hover:underline"
           >
             Cart
-          </a>
+          </Link>
           <AuthButtons />
         </div>
       </header>

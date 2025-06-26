@@ -1,7 +1,7 @@
 // src/hooks/useCart.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // ✅ Added useCallback
 import { useUser } from "@clerk/nextjs";
 import { createApiUrl, API_ENDPOINTS } from "../config/api";
 
@@ -10,19 +10,77 @@ export default function useCart() {
   const [loading, setLoading] = useState(true);
   const { user, isLoaded } = useUser();
 
-  // Load cart on mount and when user changes
-  useEffect(() => {
-    if (!isLoaded) return; // Wait for Clerk to load
+  // ✅ Memoized functions to fix dependency warnings
+  // Save cart to server for logged-in users
+  const saveCartToServer = useCallback(
+    async (cartData) => {
+      if (!user || !isLoaded) return;
 
-    if (user) {
-      loadCartFromServer();
-    } else {
-      loadCartFromLocal();
+      try {
+        await fetch(createApiUrl(`${API_ENDPOINTS.CART}/${user.id}`), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(cartData),
+        });
+      } catch (error) {
+        console.error("Error saving cart to server:", error);
+      }
+    },
+    [user, isLoaded]
+  );
+
+  // Get local cart without setting state
+  const getLocalCart = useCallback(() => {
+    try {
+      const stored = localStorage.getItem("cart");
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error("Error reading localStorage:", error);
+      return [];
     }
-  }, [user, isLoaded]);
+  }, []);
+
+  // Load cart from localStorage for non-logged-in users
+  const loadCartFromLocal = useCallback(() => {
+    try {
+      const localCart = getLocalCart();
+      setCart(localCart);
+    } catch (error) {
+      console.error("Error loading cart from localStorage:", error);
+      setCart([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [getLocalCart]);
+
+  // Merge two carts, avoiding duplicates and combining quantities
+  const mergeCartItems = useCallback((serverCart, localCart) => {
+    if (!localCart || localCart.length === 0) return serverCart;
+    if (!serverCart || serverCart.length === 0) return localCart;
+
+    const mergedCart = [...serverCart];
+
+    localCart.forEach((localItem) => {
+      const existingItemIndex = mergedCart.findIndex(
+        (item) => item._id === localItem._id
+      );
+
+      if (existingItemIndex >= 0) {
+        // Item exists in server cart, combine quantities
+        mergedCart[existingItemIndex].quantity += localItem.quantity;
+      } else {
+        // Item doesn't exist in server cart, add it
+        mergedCart.push(localItem);
+      }
+    });
+
+    return mergedCart;
+  }, []);
 
   // Load cart from server for logged-in users
-  const loadCartFromServer = async () => {
+  const loadCartFromServer = useCallback(async () => {
     try {
       const response = await fetch(
         createApiUrl(`${API_ENDPOINTS.CART}/${user.id}`)
@@ -54,73 +112,21 @@ export default function useCart() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, getLocalCart, mergeCartItems, saveCartToServer, loadCartFromLocal]);
 
-  // Get local cart without setting state
-  const getLocalCart = () => {
-    try {
-      const stored = localStorage.getItem("cart");
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error("Error reading localStorage:", error);
-      return [];
+  // ✅ Fixed dependency array
+  // Load cart on mount and when user changes
+  useEffect(() => {
+    if (!isLoaded) return; // Wait for Clerk to load
+
+    if (user) {
+      loadCartFromServer();
+    } else {
+      loadCartFromLocal();
     }
-  };
+  }, [user, isLoaded, loadCartFromServer, loadCartFromLocal]);
 
-  // Load cart from localStorage for non-logged-in users
-  const loadCartFromLocal = () => {
-    try {
-      const localCart = getLocalCart();
-      setCart(localCart);
-    } catch (error) {
-      console.error("Error loading cart from localStorage:", error);
-      setCart([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Merge two carts, avoiding duplicates and combining quantities
-  const mergeCartItems = (serverCart, localCart) => {
-    if (!localCart || localCart.length === 0) return serverCart;
-    if (!serverCart || serverCart.length === 0) return localCart;
-
-    const mergedCart = [...serverCart];
-
-    localCart.forEach((localItem) => {
-      const existingItemIndex = mergedCart.findIndex(
-        (item) => item._id === localItem._id
-      );
-
-      if (existingItemIndex >= 0) {
-        // Item exists in server cart, combine quantities
-        mergedCart[existingItemIndex].quantity += localItem.quantity;
-      } else {
-        // Item doesn't exist in server cart, add it
-        mergedCart.push(localItem);
-      }
-    });
-
-    return mergedCart;
-  };
-
-  // Save cart to server for logged-in users
-  const saveCartToServer = async (cartData) => {
-    if (!user || !isLoaded) return;
-
-    try {
-      await fetch(createApiUrl(`${API_ENDPOINTS.CART}/${user.id}`), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cartData),
-      });
-    } catch (error) {
-      console.error("Error saving cart to server:", error);
-    }
-  };
-
+  // ✅ Fixed dependency array
   // Sync cart changes (debounced to avoid too many API calls)
   useEffect(() => {
     if (loading || !isLoaded) return; // Don't sync during initial load
@@ -134,7 +140,7 @@ export default function useCart() {
     }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [cart, user, loading, isLoaded]);
+  }, [cart, user, loading, isLoaded, saveCartToServer]);
 
   // Clear cart when user logs out
   useEffect(() => {
