@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+body.blurred > *:not(.popup) {
+  filter: blur(4px);
+  pointer-events: none;
+}
