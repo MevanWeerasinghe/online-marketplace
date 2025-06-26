@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { createApiUrl, API_ENDPOINTS } from "../../config/api";
@@ -18,6 +19,7 @@ export default function SellPage() {
     category: "",
   });
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [categories, setCategories] = useState([]);
 
@@ -49,7 +51,13 @@ export default function SellPage() {
   };
 
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      // Create preview URL for the selected image
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -90,6 +98,11 @@ export default function SellPage() {
       alert("Failed to upload item");
     } finally {
       setUploading(false);
+      // Clean up the preview URL
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
     }
   };
 
@@ -153,11 +166,15 @@ export default function SellPage() {
           required
           className="w-full border text-sm file:bg-purple-600 file:text-white file:px-4 file:py-2 file:rounded"
         />
-        {image && (
-          <img
-            src={URL.createObjectURL(image)}
-            alt="preview"
+        {imagePreview && (
+          <Image
+            src={imagePreview}
+            alt="Image preview"
+            width={128}
+            height={128}
             className="h-32 object-cover mt-2 rounded"
+            style={{ objectFit: "cover" }}
+            unoptimized={true}
           />
         )}
         <button

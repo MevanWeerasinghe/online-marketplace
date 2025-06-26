@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import useCart from "../../../hooks/useCart";
 import CustomPopup from "../../../components/CustomPopup";
@@ -17,6 +18,17 @@ export default function ItemProfilePage() {
   const [showAddToCartPopup, setShowAddToCartPopup] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
+  // Helper function to get the correct image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return "/placeholder.jpg";
+
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    return `${API_BASE_URL}${imageUrl}`;
+  };
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -70,10 +82,14 @@ export default function ItemProfilePage() {
         </div>
       )}
 
-      <img
-        src={`${API_BASE_URL}${item.imageUrl}`}
-        alt={item.title}
+      <Image
+        src={getImageUrl(item.imageUrl)}
+        alt={item.title || "Product image"}
+        width={800}
+        height={288}
         className="w-full h-72 object-cover rounded-lg mb-4"
+        style={{ objectFit: "cover" }}
+        unoptimized={true}
       />
       <h1 className="text-3xl font-bold text-purple-800 mb-2">{item.title}</h1>
       <p className="text-green-600 text-xl font-semibold mb-2">
@@ -82,11 +98,11 @@ export default function ItemProfilePage() {
       <p className="text-gray-700 mb-4">{item.description}</p>
 
       <p className="text-sm text-pink-500 mb-2">
-        Tags: {item.keywords.join(", ")}
+        Tags: {item.keywords?.join(", ") || "No tags"}
       </p>
 
       <p className="text-yellow-500 text-md mb-4">
-        ⭐ {item.rating.toFixed(1)} ({item.ratedBy} ratings)
+        ⭐ {item.rating?.toFixed(1) || "0.0"} ({item.ratedBy || 0} ratings)
       </p>
 
       <button
@@ -112,10 +128,14 @@ export default function ItemProfilePage() {
         inputMax={50}
       >
         <div className="flex items-center gap-4">
-          <img
-            src={`${API_BASE_URL}${item.imageUrl}`}
-            alt={item.title}
+          <Image
+            src={getImageUrl(item.imageUrl)}
+            alt={item.title || "Product image"}
+            width={64}
+            height={64}
             className="w-16 h-16 object-cover rounded"
+            style={{ objectFit: "cover" }}
+            unoptimized={true}
           />
           <div>
             <h3 className="font-semibold text-purple-800">{item.title}</h3>

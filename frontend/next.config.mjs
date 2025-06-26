@@ -13,12 +13,11 @@ const nextConfig = {
         hostname: "via.placeholder.com",
         pathname: "/**",
       },
-      // Add your production domain when you deploy
-      // {
-      //   protocol: 'https',
-      //   hostname: 'your-production-domain.com',
-      //   pathname: '/uploads/**',
-      // },
+      {
+        protocol: "https",
+        hostname: "online-marketplace.netlify.app",
+        pathname: "/uploads/**",
+      },
     ],
   },
 };

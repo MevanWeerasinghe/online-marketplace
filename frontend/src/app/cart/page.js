@@ -1,6 +1,7 @@
 // src/app/cart/page.js
 "use client";
 
+import Image from "next/image";
 import useCart from "../../hooks/useCart";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "../../config/api";
@@ -15,6 +16,17 @@ export default function CartPage() {
     getTotalItems,
   } = useCart();
   const router = useRouter();
+
+  // Helper function to get the correct image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return "/placeholder.jpg";
+
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    return `${API_BASE_URL}${imageUrl}`;
+  };
 
   const handleQuantityChange = (itemId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -45,10 +57,14 @@ export default function CartPage() {
                 key={item._id}
                 className="flex flex-col md:flex-row gap-4 items-center border p-4 rounded-lg shadow bg-white border-purple-100"
               >
-                <img
-                  src={`${API_BASE_URL}${item.imageUrl}`}
-                  alt={item.title}
+                <Image
+                  src={getImageUrl(item.imageUrl)}
+                  alt={item.title || "Cart item"}
+                  width={112}
+                  height={112}
                   className="w-28 h-28 object-cover rounded"
+                  style={{ objectFit: "cover" }}
+                  unoptimized={true}
                 />
                 <div className="flex-1 text-center md:text-left">
                   <h2 className="text-lg font-semibold text-purple-800">
