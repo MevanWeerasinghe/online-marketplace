@@ -4,7 +4,7 @@ const API_CONFIG = {
   development: "http://localhost:5000",
 
   // Production URL - replace with your actual production API URL
-  production: "https://your-api-domain.com",
+  production: "https://online-marketplace-production-3955.up.railway.app/",
 
   // Test URL (optional)
   test: "http://localhost:5000",
